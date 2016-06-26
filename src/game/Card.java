@@ -1,26 +1,30 @@
 package game;
 
+import java.util.ArrayList;
+
 /**
  *
  * @author gustavo
  */
 public class Card {
 
-    private String nome;
+    private String name;
     private Integer id;
     private Integer attack;
     private Integer defense;
     private Integer ability;
+    private Session player;
 
     public Card() {
+
     }
 
-    public String getNome() {
-        return nome;
+    public String getName() {
+        return name;
     }
 
-    public void setNome(String nome) {
-        this.nome = nome;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public Integer getAttack() {
@@ -53,6 +57,14 @@ public class Card {
 
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    public Session getPlayer() {
+        return player;
+    }
+
+    public void setPlayer(Session player) {
+        this.player = player;
     }
 
 }

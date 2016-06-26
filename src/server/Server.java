@@ -4,7 +4,12 @@ import game.Attributes;
 import game.Card;
 import game.Session;
 import game.States;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -16,6 +21,34 @@ public class Server {
     private ArrayList<Card> board;
     private Attributes currentAttribute;
     private Integer id;
+    ServerSocket serverSocket;
+
+    public Server() {
+        players = new ArrayList<>();
+        board = new ArrayList<>();
+        defineAttribute();
+    }
+
+    public void addPlayer(Session s) {
+        players.add(s);
+    }
+
+    public void createServer(int port) throws IOException {
+        serverSocket = new ServerSocket(port);
+    }
+
+    public Socket waitConnection() throws IOException {
+        Socket socket = serverSocket.accept();
+        return socket;
+    }
+
+    public void closeConnection() {
+        try {
+            serverSocket.close();
+        } catch (IOException ex) {
+            Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
 
     public Integer gerarId() {
         this.id = +1;
@@ -32,15 +65,9 @@ public class Server {
             wait();
         }
 
-        /*
-        verificar se é o ultimo
-                se n for wait() --> quando acordarem, na saida do método, notifyall
-        se for, computaVencedor, 
-        gera string de resposta
+        String winner = computeCards();
+        board.clear();
         notifyAll();
-         */
-        String winner = "";
-
         return winner;
     }
 
@@ -52,11 +79,11 @@ public class Server {
                 isLast = false;
             }
         }
-        
+
         return isLast;
     }
 
-    public void computeCards() {
+    public String computeCards() {
         Integer max = 0;
         Card winner = new Card();
 
@@ -82,11 +109,11 @@ public class Server {
             }
         }
 
-        String answer = "WINNER#" + winner.getNome();
+        winner.getPlayer().setWins(winner.getPlayer().getWins() + 1);
+        return "Vencedor: " + winner.getPlayer().getNome() + "Usando a carta: " + winner.getName();
     }
 
     public void defineAttribute() {
-
         if (Math.round(Math.random() * 2) == 0) {
             currentAttribute = Attributes.ATTACK;
         } else if (Math.round(Math.random() * 2) == 1) {
@@ -94,7 +121,6 @@ public class Server {
         } else {
             currentAttribute = Attributes.ABILITY;
         }
-
     }
 
     public ArrayList<Session> getPlayers() {
@@ -128,4 +154,50 @@ public class Server {
     public void setId(Integer id) {
         this.id = id;
     }
+
+    public static void main(String[] args) {
+
+        Server servidor = new Server();
+
+        System.out.println("Criando Servidor...");
+
+        try {
+            servidor.createServer(5555);
+        } catch (IOException ex) {
+            System.out.println("Erro:" + ex.getMessage());
+        }
+
+        try {
+            while (true) {
+
+                System.out.println("Esperando conexão...");
+
+                Socket socket = servidor.waitConnection();
+
+                System.out.println("Conexão aceita.");
+
+                Session session = new Session(socket, servidor);
+                Thread t = new Thread(session);
+                t.start();
+                servidor.addPlayer(session);
+
+                //fim
+            }
+        } catch (IOException ex) {
+            System.out.println("Erro: " + ex.getMessage());
+
+        } finally {
+            servidor.closeConnection();
+        }
+
+    }
+
+    public String rank() {
+        String rank="\n";
+        for(Session s : players){
+            rank+="Jogador: "+s.getNome()+" Número de vitórias: "+s.getWins()+" \n";
+        }
+        return rank;
+    }
+
 }
